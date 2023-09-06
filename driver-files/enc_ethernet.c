@@ -438,47 +438,29 @@ spierr_t memcpy_from_enc(void* dest, uint16_t source, int16_t num) {
  * @return 		total length of packet to pass to lwIP, ERR_DRIVER_FAIL on failure
  */
 uint16_t ethernet_getRecvLength(uint8_t pkthdr[24]){
-   /* If it is the first packet received, I can't for some reason find the next packet pointer */
-   nextpktptr = readEthHeader(pkthdr);
-   /* If failure */
-   if(nextpktptr == ERR_DRIVER_FAIL)
-	return (uint16_t) ERR_DRIVER_FAIL;
-   uint16_t len, type;
-//   if (numPackets == 0){
-//	nextpktptr = 70;
-	
-//	status =  pkthdr[4] << 24 | pkthdr[3] << 16 | pkthdr[2]<< 8 | pkthdr[1];
+    /* If it is the first packet received, I can't for some reason find the next packet pointer */
+    nextpktptr = readEthHeader(pkthdr);
+    /* If failure */
+    if(nextpktptr == ERR_DRIVER_FAIL){
+        return (uint16_t) ERR_DRIVER_FAIL;
+    }
 
-//    	uint8_t dest_mac[6];
-//    	uint8_t src_mac[6];
+    uint16_t len, type;
+    status =  pkthdr[5] << 24 | pkthdr[4] << 16 | pkthdr[3]<< 8 | pkthdr[2];
 
-//    	memcpy(dest_mac, pkthdr+5, 6);
-//    	memcpy(src_mac, pkthdr+11, 6);
-	
-//	type =  pkthdr[21] << 8 | pkthdr[22];
-//    	if (type == 0x0800)
-//    	    len = 64;
-//    	else
-//    	    len = type;	
-//    	
-//    }
-//    else{
-        status =  pkthdr[5] << 24 | pkthdr[4] << 16 | pkthdr[3]<< 8 | pkthdr[2];
+    uint8_t dest_mac[6];
+    uint8_t src_mac[6];
 
-        uint8_t dest_mac[6];
-        uint8_t src_mac[6];
+    memcpy(dest_mac, pkthdr+6, 6);
+    memcpy(src_mac, pkthdr+12, 6);
 
-        memcpy(dest_mac, pkthdr+6, 6);
-        memcpy(src_mac, pkthdr+12, 6);
-
-        type =  pkthdr[22] << 8 | pkthdr[23];
-        if (type == 0x0800)
-            len = 64;
-        else
-            len = type;
+    type =  pkthdr[22] << 8 | pkthdr[23];
+    if (type == 0x0800){
+        len = 64;
+    } else {
+        len = type;
+    }
         
-//    }	
-   
     uint8_t lastVal;
     memcpy_from_enc(&lastVal, 3071, 1);
     Display_printf(display,0,0,"LastVal : %d", lastVal);		 
@@ -497,46 +479,51 @@ spierr_t ethernet_packetReceive(uint8_t* receiveBuffer, uint16_t len){
     uint8_t RxRdPtrH = spi_read(ERXRDPTH);
     uint16_t RxRdPt = RxRdPtrH<<8 | RxRdPtrL;
     if (numPackets ==0){
-//    	gnextPacketPtr+=5;
-	if(spi_write(ERXRDPTL,(gnextPacketPtr) & 0x00ff)!=ERR_SUCCESS)
-                return ERR_DRIVER_FAIL;
-        if(spi_write(ERXRDPTH,((gnextPacketPtr) & 0xff00 )>>8)!=ERR_SUCCESS)
-                return ERR_DRIVER_FAIL;
+	    if(spi_write(ERXRDPTL,(gnextPacketPtr) & 0x00ff)!=ERR_SUCCESS){
+            return ERR_DRIVER_FAIL;
+        }
+        if(spi_write(ERXRDPTH,((gnextPacketPtr) & 0xff00 )>>8)!=ERR_SUCCESS){
+            return ERR_DRIVER_FAIL;
+        }
     }
-//    else
 	gnextPacketPtr+=6;	
         
-	if (len ==0)
-            return  ERR_DRIVER_FAIL;
-        else{
-            if(readBufferMemory(receiveBuffer, gnextPacketPtr, len)!=0)
-		return  ERR_DRIVER_FAIL;
-            receiveBuffer[len] = 0;
-        }
-        gnextPacketPtr = nextpktptr-1;
-//        gnextPacketPtr = nextpktptr;
-//        if(gnextPacketPtr-1 > RXSTOP_INIT){
-        if(gnextPacketPtr > RXSTOP_INIT){
-            if(spi_write(ERXRDPTL,RXSTOP_INIT & 0x00ff)!=ERR_SUCCESS)
-		return ERR_DRIVER_FAIL;
-            if(spi_write(ERXRDPTH,(RXSTOP_INIT & 0xff00 )>>8)!=ERR_SUCCESS)
-		return ERR_DRIVER_FAIL;
-        }
-        else{
-            if(spi_write(ERXRDPTL,(gnextPacketPtr ) & 0x00ff)!=ERR_SUCCESS)
-//            if(spi_write(ERXRDPTL,(gnextPacketPtr -1) & 0x00ff)!=ERR_SUCCESS)
-		return ERR_DRIVER_FAIL;
-            if(spi_write(ERXRDPTH,((gnextPacketPtr ) & 0xff00) >> 8 )!=ERR_SUCCESS)
-//            if(spi_write(ERXRDPTH,((gnextPacketPtr -1) & 0xff00) >> 8 )!=ERR_SUCCESS)
-		return ERR_DRIVER_FAIL;
+	if (len ==0){
+        return  ERR_DRIVER_FAIL;
+    } else {
+        if(readBufferMemory(receiveBuffer, gnextPacketPtr, len)!=0)
+    return  ERR_DRIVER_FAIL;
+        receiveBuffer[len] = 0;
+    }
+    gnextPacketPtr = nextpktptr-1;
+
+    if(gnextPacketPtr > RXSTOP_INIT){
+        if(spi_write(ERXRDPTL,RXSTOP_INIT & 0x00ff)!=ERR_SUCCESS){
+            return ERR_DRIVER_FAIL;
         }
 
-        /* set ECON2.PKTDEC */
-        if(selectMemBank(0)!=ERR_SUCCESS)
-		return ERR_DRIVER_FAIL;
-        if(bitFieldSet(0x1e, 0x40)!=ERR_SUCCESS)
-		return ERR_DRIVER_FAIL;
-//    }
+        if(spi_write(ERXRDPTH,(RXSTOP_INIT & 0xff00 )>>8)!=ERR_SUCCESS){
+            return ERR_DRIVER_FAIL;
+        }
+    } else {
+        if(spi_write(ERXRDPTL,(gnextPacketPtr ) & 0x00ff)!=ERR_SUCCESS){
+            return ERR_DRIVER_FAIL;
+        }
+
+        if(spi_write(ERXRDPTH,((gnextPacketPtr ) & 0xff00) >> 8 )!=ERR_SUCCESS){
+            return ERR_DRIVER_FAIL;
+        }
+    }
+
+    /* set ECON2.PKTDEC */
+    if(selectMemBank(0)!=ERR_SUCCESS){
+        return ERR_DRIVER_FAIL;
+    }
+
+    if(bitFieldSet(0x1e, 0x40)!=ERR_SUCCESS){
+        return ERR_DRIVER_FAIL;
+    }
+
     numPackets++;
     return ERR_SUCCESS;
 }
@@ -571,7 +558,6 @@ spierr_t clearRxBuf(void){
  *  @return 	ERR_SUCCESS on success, ERR_DRIVER_FAIL on failure
  */
 spierr_t clearTxBuf(void){
-    //uint16_t length = TXSTOP_INIT - TXSTART_INIT;
     uint16_t num_units = (TXSTOP_INIT-TXSTART_INIT)/10;
     uint16_t unit_len = (TXSTOP_INIT-TXSTART_INIT)/num_units;
     Display_printf(display,0,0,"Length is : %d, num_units: %d, unit_len : %d", TXSTOP_INIT-TXSTART_INIT, num_units, unit_len);
@@ -672,14 +658,17 @@ spierr_t justATest(void){
     /* Read the entire contents of memory in 8 parts */
     int j;
     uint8_t bufferMemoryContents[(RXSTOP_INIT-RXSTART_INIT)/32];
-    if(readBufferMemory(bufferMemoryContents, 0,unit)!=ERR_SUCCESS)
-	return ERR_DRIVER_FAIL;
-    for (j=0;j<unit;j++)
-	Display_printf(display,0,0,"buffer[%d] : %x",j, bufferMemoryContents[j] );
+    if(readBufferMemory(bufferMemoryContents, 0,unit)!=ERR_SUCCESS){
+	    return ERR_DRIVER_FAIL;
+    }
+    for (j=0;j<unit;j++){
+	    Display_printf(display,0,0,"buffer[%d] : %x",j, bufferMemoryContents[j] );
+    }
     memset(bufferMemoryContents,0,unit);
     uint8_t lastValue;	
-    if(readBufferMemory(&lastValue, 3070, 1)!=ERR_SUCCESS)
-	return ERR_DRIVER_FAIL;
+    if(readBufferMemory(&lastValue, 3070, 1)!=ERR_SUCCESS){
+	    return ERR_DRIVER_FAIL;
+    }
  
 	Display_printf(display,0,0,"buffer[%d] : %x",3070, bufferMemoryContents[3070] );
     /* Restore all parameters to initial states */
