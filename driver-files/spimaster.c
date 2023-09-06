@@ -1071,8 +1071,6 @@ spierr_t test_clocks(void){
     if (setClock(8)!= (spierr_t) ERR_SUCCESS)
 	return (spierr_t) ERR_DRIVER_FAIL;
     sleep(1);
-    //if (setClock(7)!= (spierr_t) ERR_SUCCESS)
-//	return (spierr_t) ERR_DRIVER_FAIL;
     sleep(1);
     if (setClock(4)!= (spierr_t) ERR_SUCCESS)
 	return (spierr_t) ERR_DRIVER_FAIL;
