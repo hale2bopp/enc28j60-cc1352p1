@@ -1,4 +1,0 @@
-/Users/sramnath/WirelessMicPrototyping/enc28j60-driver/driver-test/build/CMakeFiles/rebuild_cache.dir
-/Users/sramnath/WirelessMicPrototyping/enc28j60-driver/driver-test/build/CMakeFiles/edit_cache.dir
-/Users/sramnath/WirelessMicPrototyping/enc28j60-driver/driver-test/build/CMakeFiles/test.out.dir
-/Users/sramnath/WirelessMicPrototyping/enc28j60-driver/driver-test/build/CMakeFiles/enc28j60board.dir
